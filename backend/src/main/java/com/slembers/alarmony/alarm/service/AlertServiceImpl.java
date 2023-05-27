@@ -10,7 +10,11 @@ import com.slembers.alarmony.alarm.dto.InviteMemberSetToGroupDto;
 import com.slembers.alarmony.alarm.dto.response.AlarmInviteResponseDto;
 import com.slembers.alarmony.alarm.dto.response.AlertListResponseDto;
 import com.slembers.alarmony.alarm.dto.response.AutoLogoutValidDto;
-import com.slembers.alarmony.alarm.entity.*;
+import com.slembers.alarmony.alarm.entity.Alarm;
+import com.slembers.alarmony.alarm.entity.AlarmRecord;
+import com.slembers.alarmony.alarm.entity.Alert;
+import com.slembers.alarmony.alarm.entity.AlertTypeEnum;
+import com.slembers.alarmony.alarm.entity.MemberAlarm;
 import com.slembers.alarmony.alarm.exception.AlarmErrorCode;
 import com.slembers.alarmony.alarm.exception.AlarmRecordErrorCode;
 import com.slembers.alarmony.alarm.exception.AlertErrorCode;
@@ -24,15 +28,13 @@ import com.slembers.alarmony.global.security.util.SecurityUtil;
 import com.slembers.alarmony.member.entity.Member;
 import com.slembers.alarmony.member.exception.MemberErrorCode;
 import com.slembers.alarmony.member.repository.MemberRepository;
-
-import java.util.List;
-
-import java.util.Optional;
-
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
+import java.util.Optional;
 
 @Slf4j
 @Service
@@ -83,8 +85,26 @@ public class AlertServiceImpl implements AlertService {
 
         usernameList.stream()
             .map(memberRepository::findByUsername)
+            /*
+                TODO-review P1
+
+                flatMap을 활용해서 stream으로 변환 작업을 많이하고 계시고, 메서드 참조 표현식 활용도 좋습니다.
+                다만 stream의 중간 연산은 값싼 연산이 아니기에,
+
+                usernameList.stream()
+                    .flatMap(username -> memberRepository.findByUsername(username).stream())
+                    .map(receiver -> createAlert(receiver, null, alarm, AlertTypeEnum.DELETE))
+
+                처럼 중간 연산을 줄여보는 것도 고민해 보시면 좋을 거 같아요.
+             */
             .flatMap(Optional::stream)
             .map(receiver -> createAlert(receiver, null, alarm, AlertTypeEnum.DELETE))
+            /*
+                TODO-review P3
+
+                알럿을 보내는 행위는 서비스 로직과 전혀 무관하게 동작시키려는 의도가 있어보입니다.
+                알럿 발송이 보장되지 않아도 되는 로직이라면, spring-event 활용해서 분리해 보는 건 어떠실까요?
+             */
             .forEach(this::sendAlert);
     }
 
@@ -105,16 +125,16 @@ public class AlertServiceImpl implements AlertService {
     }
 
     private Alert createAlert(Member receiver, Member sender, Alarm alarm, AlertTypeEnum type) {
-        String content;
-        if (type == AlertTypeEnum.INVITE) {
-            content = String.format("'%s' 그룹 초대입니다.", alarm.getTitle());
-        } else if (type == AlertTypeEnum.DELETE) {
-            content = String.format("'%s' 그룹이 삭제되었습니다.", alarm.getTitle());
-        } else if (type == AlertTypeEnum.BANN) {
-            content = String.format("'%s' 그룹에서 퇴출되었습니다.", alarm.getTitle());
-        } else {
-            throw new CustomException(AlertErrorCode.ENUM_NOT_ALLOW);
-        }
+        /*
+            TODO-review P1
+
+            Enum 정의하고 각 서비스 레이어에서 로직을 정의하는 것보단 전략 패턴을 활용해 Enum 역할을 위임해 보시는 건 어떨까요?
+            예시 소스를 Enum 안에 만들어 두겠습니다.
+
+            *type에 대한 npe 체크도 필요*
+         */
+        final String content = type.createAlertContent(alarm.getTitle());
+
         return Alert.builder()
             .type(type)
             .content(content)
@@ -355,8 +375,19 @@ public class AlertServiceImpl implements AlertService {
         Member member = memberRepository.findByUsername(username)
                 .orElseThrow(() -> new CustomException(MemberErrorCode.MEMBER_NOT_FOUND));
 
+        /*
+            TODO-review P5
+
+            info 로그는 단순 디버깅 용도일까요?
+         */
         log.info(member.getRegistrationToken());
         log.info(token);
+
+        /*
+            TODO-review P1
+
+            type safe하지 않은 환경에서는 항상 npe에 대해 생각하는 게 좋습니다.
+         */
         if(member.getRegistrationToken().isEmpty() || member.getRegistrationToken().equals(token)) {
             return AutoLogoutValidDto.builder().success(false).build();
         }
@@ -366,6 +397,11 @@ public class AlertServiceImpl implements AlertService {
                     .setPriority(Priority.HIGH)
                     .build();
 
+            /*
+                TODO-review P5
+
+                type, receiver와 같이 message에 고정적으로 사용되는 문자열들은 리터럴 문자보단 constants로 정의해서 사용하면 어떨까요?
+             */
             // 메시지 설정
             Message message = Message.builder()
                     .putData("type", AlertTypeEnum.AUTO_LOGOUT.name())

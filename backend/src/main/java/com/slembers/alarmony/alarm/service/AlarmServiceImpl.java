@@ -1,8 +1,8 @@
 package com.slembers.alarmony.alarm.service;
 
 import com.slembers.alarmony.alarm.dto.AlarmDto;
-import com.slembers.alarmony.alarm.dto.AlarmListDetailDto;
 import com.slembers.alarmony.alarm.dto.AlarmInfoDto;
+import com.slembers.alarmony.alarm.dto.AlarmListDetailDto;
 import com.slembers.alarmony.alarm.dto.response.AlarmListResponseDto;
 import com.slembers.alarmony.alarm.entity.Alarm;
 import com.slembers.alarmony.alarm.entity.AlarmRecord;
@@ -20,6 +20,7 @@ import com.slembers.alarmony.member.exception.MemberErrorCode;
 import com.slembers.alarmony.member.repository.MemberRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.jetbrains.annotations.NotNull;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -57,6 +58,12 @@ public class AlarmServiceImpl implements AlarmService {
             // 리스트를 객체에 담아서 전송한다.
             return AlarmListResponseDto.builder().alarms(alarms).build();
         } catch (Exception e) {
+            /*
+                TODO-review P1
+
+                에러메시지의 내용만 가져오는 건 빠른 트래킹에 한계가 있습니다.
+                Exceptionutils getstacktrace 메서드를 활용해 보는 건 어떨까요?
+             */
             log.error(e.getMessage());
             throw new CustomException(AlarmErrorCode.ALARM_GET_ERROR);
         }
@@ -75,25 +82,15 @@ public class AlarmServiceImpl implements AlarmService {
         Member groupLeader = memberRepository.findByUsername(username)
             .orElseThrow(() -> new CustomException(MemberErrorCode.MEMBER_NOT_FOUND));
 
-        Alarm alarm;
-        // 알람을 생성한다
-        try {
-            // 알람을 생성한다.
-            alarm = Alarm.builder()
-                .title(alarmInfoDto.getTitle())
-                .content(alarmInfoDto.getContent())
-                .time(LocalTime.of(alarmInfoDto.getHour(), alarmInfoDto.getMinute()))
-                .host(groupLeader)
-                .alarmDate(CommonMethods.changeBooleanListToString(alarmInfoDto.getAlarmDate()))
-                .soundName(alarmInfoDto.getSoundName())
-                .soundVolume(alarmInfoDto.getSoundVolume())
-                .vibrate(alarmInfoDto.isVibrate())
-                .build();
-            alarmRepository.save(alarm);
-        } catch (Exception e) {
-            log.error(e.getMessage());
-            throw new CustomException(AlarmErrorCode.ALARM_CREATE_ERROR);
-        }
+        /*
+            TODO-review P3
+
+            개인적인 취향이지만, 다음과 같이 try-catch에서 변수를 초기화하는 방식은 메서드의 길이도 길어질 뿐 아니라
+            가독성도 좋지 않습니다.
+
+            메인 메서드에서는 한 눈에 흐름을 알 수 있도록 메서드로 변경해 보시는 건 어떨까요? (예제 참고)
+         */
+        final Alarm alarm = createAlarm(alarmInfoDto, groupLeader);
 
         MemberAlarm memberAlarm;
         // 그룹장을 알람-멤버에 추가한다.
@@ -129,6 +126,29 @@ public class AlarmServiceImpl implements AlarmService {
         }
 
         return alarm.getId();
+    }
+
+    @NotNull
+    private Alarm createAlarm(AlarmInfoDto alarmInfoDto, Member groupLeader) {
+        // 알람을 생성한다
+        try {
+            // 알람을 생성한다.
+            Alarm alarm = Alarm.builder()
+                .title(alarmInfoDto.getTitle())
+                .content(alarmInfoDto.getContent())
+                .time(LocalTime.of(alarmInfoDto.getHour(), alarmInfoDto.getMinute()))
+                .host(groupLeader)
+                .alarmDate(CommonMethods.changeBooleanListToString(alarmInfoDto.getAlarmDate()))
+                .soundName(alarmInfoDto.getSoundName())
+                .soundVolume(alarmInfoDto.getSoundVolume())
+                .vibrate(alarmInfoDto.isVibrate())
+                .build();
+
+            return alarmRepository.save(alarm);
+        } catch (Exception e) {
+            log.error(e.getMessage());
+            throw new CustomException(AlarmErrorCode.ALARM_CREATE_ERROR);
+        }
     }
 
     /**
@@ -208,6 +228,17 @@ public class AlarmServiceImpl implements AlarmService {
                 .orElseThrow(() -> new CustomException(AlarmErrorCode.ALARM_NOT_FOUND));
 
         String previousName = alarm.getTitle();
+
+        /*
+            TODO-review P3
+
+            host도 non-null로 지정되어 있지만, 애너테이션으로 지정되어 있고 내부 메서드로 충분히 nullable한 객체로 될 수 있어보입니다.
+            확실한 member를 앞으로 변경하시는 건 어떨까요?
+
+            ex) !member.equals~
+
+            그리고, 코드 컨벤션을 위해 조건식 내 한 줄이라도 중괄호로 묶어주는 습관을 들이는 게 좋을 거 같습니다.
+         */
         if(!alarm.getHost().equals(member))
             throw new CustomException(AlarmErrorCode.MEMBER_NOT_HOST);
 

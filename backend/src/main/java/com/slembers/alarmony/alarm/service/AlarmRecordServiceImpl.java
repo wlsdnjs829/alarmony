@@ -1,25 +1,31 @@
 package com.slembers.alarmony.alarm.service;
 
-import com.slembers.alarmony.alarm.dto.AlarmRecordDto;
 import com.slembers.alarmony.alarm.dto.AlarmEndRecordDto;
+import com.slembers.alarmony.alarm.dto.AlarmRecordDto;
 import com.slembers.alarmony.alarm.dto.MemberRankingDto;
 import com.slembers.alarmony.alarm.entity.Alarm;
 import com.slembers.alarmony.alarm.entity.AlarmRecord;
 import com.slembers.alarmony.alarm.exception.AlarmRecordErrorCode;
 import com.slembers.alarmony.alarm.repository.AlarmRecordRepository;
 import com.slembers.alarmony.global.execption.CustomException;
-import java.time.LocalDateTime;
-import java.util.List;
-
 import com.slembers.alarmony.member.entity.Member;
 import com.slembers.alarmony.member.service.MemberService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
+import java.util.List;
+
 @Slf4j
 @Service
 @RequiredArgsConstructor
+/*
+    TODO-review P1
+
+    전반적으로 서비스 클래스에 Transactional 애너테이션을 활용하지 않는 거 같아요.
+    이유가 있으실까요?
+ */
 public class AlarmRecordServiceImpl implements AlarmRecordService {
 
     private final AlarmService alarmService;
@@ -65,6 +71,11 @@ public class AlarmRecordServiceImpl implements AlarmRecordService {
         Alarm alarm = alarmService.findAlarmByAlarmId(alarmEndRecordDto.getAlarmId());
         // 서버와 9시간 차이가 나기 때문에 9시간을 빼준다.
         try {
+            /*
+                TODO-review P3
+
+                이런 로직은 alarmRecord에 위임하는 건 어떨까요?
+             */
             if (alarmEndRecordDto.isSuccess()) {
                 alarmRecord.recordSuccess(alarm.getTime(), alarmEndRecordDto.getDatetime());
             } else {
