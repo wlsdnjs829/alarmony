@@ -7,7 +7,14 @@ import lombok.NoArgsConstructor;
 import org.hibernate.annotations.ColumnDefault;
 import org.hibernate.annotations.DynamicInsert;
 
-import javax.persistence.*;
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.FetchType;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
+import javax.persistence.JoinColumn;
+import javax.persistence.OneToOne;
 import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -67,6 +74,14 @@ public class AlarmRecord {
         this.totalCount++;
         this.successCount++;
         long seconds = Duration.between(alarmTime,recordTime.toLocalTime()).toSeconds();
+        /*
+            TODO-review P1
+
+            메서드 내 리터럴 상수로 고정되어 있는 건 TC 작성에서도 도움이 되지 않습니다.
+            제어가 가능한 메서드로 변경해 보시는 건 어떨까요?
+
+            https://jojoldu.tistory.com/676 블로그 참고해 보시면 좋을 거 같아요.
+         */
         totalWakeUpTime += seconds < 0 ? 86400 + seconds : seconds;
         // TODO : 서버 시간이 9시간이 다르기 때문에 저장하기 전에는 9시간을 빼주어야 한다. (추후 수정 필요)
         this.todayAlarmRecord = recordTime.minusHours(9);

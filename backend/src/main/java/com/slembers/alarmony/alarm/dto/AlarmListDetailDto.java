@@ -8,6 +8,14 @@ import java.util.List;
 @Getter
 public class AlarmListDetailDto {
 
+    /*
+        TODO-review P5
+
+        변경될 요소가 없는 프로퍼티는 명시적으로 final 추가해 주시는 게 어떨까요?
+
+        추가로 Dto로 통일하고 계시지만, 대부분 VO의 성격을 띄고 있는 객체로 보입니다.
+        객체지향에 대해 다시 한 번 생각해 보면 더 도움이 될 거 같아요.
+     */
     private boolean host;
 
     private Long alarmId;

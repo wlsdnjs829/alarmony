@@ -7,6 +7,15 @@ import com.slembers.alarmony.alarm.dto.MemberRankingDto;
 import java.time.LocalDateTime;
 import java.util.List;
 
+/*
+    TODO-review P1
+
+    개인적으로 service interface layer를 둔 의미를 잘 모르겠네요.
+    controller - service layer간 의존성을 끊기 위한 역할도 아니고,
+    interface가 controller에 있어 dip를 의도한 설계도 아닌 것으로 보입니다.
+
+    이렇게 설계한 의도가 있을까요?
+ */
 public interface AlarmRecordService {
 
     /**

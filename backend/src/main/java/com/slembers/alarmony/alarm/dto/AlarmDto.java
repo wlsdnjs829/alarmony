@@ -8,6 +8,13 @@ import lombok.NoArgsConstructor;
 import java.util.List;
 
 @Getter
+/*
+    TODO-review P1
+
+    제가 자바가 잘 기억이 나지 않는데,
+    AllArgsConstructor annotation 선언을 하시고 아래에 모든 필드에 대한 메서드를 정의하신 부분과
+    NoArgsConstructor의 쓰임새를 잘 모르겠네요.
+ */
 @NoArgsConstructor
 @AllArgsConstructor
 public class AlarmDto {

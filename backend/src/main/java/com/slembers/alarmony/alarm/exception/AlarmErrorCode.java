@@ -17,6 +17,14 @@ public enum AlarmErrorCode implements ErrorCode {
     MEMBER_NOT_HOST(HttpStatus.FORBIDDEN, "호스트 권한이 없습니다."),
     ALARM_DATE_INFO_WRONG(HttpStatus.BAD_REQUEST, "요일 정보가 잘못되었습니다."),
 
+    /*
+        TODO-review P5
+
+        메시지를 enum으로 관리하는 습관이 정말 좋네요!
+        추후 글로벌로 확장할 때도 해당 클래스만 신경쓰면 되겠네요.
+
+        사소한 것이지만 enum class에서는 trailing comma를 유지하는 습관도 있으면 좋을 거 같아요.
+     */
     ALARM_ALREADY_INCLUDED(HttpStatus.MULTI_STATUS,"이미 알람 멤버에 포함되었습니다.")
 
     ;

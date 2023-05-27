@@ -4,13 +4,13 @@ import com.slembers.alarmony.alarm.dto.AlarmRecordDto;
 import com.slembers.alarmony.alarm.dto.MemberRankingDto;
 import com.slembers.alarmony.alarm.entity.AlarmRecord;
 import com.slembers.alarmony.alarm.entity.MemberAlarm;
-import java.time.LocalDateTime;
-import java.util.List;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
+import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Optional;
 
 @Repository
@@ -22,6 +22,12 @@ public interface AlarmRecordRepository extends JpaRepository<AlarmRecord, Long> 
      * @param memberId 멤버 아이디
      * @param alarmId  알람 아이디
      * @return 알람 기록 튜플
+     */
+    /*
+        TODO-review P1
+
+        가독성과 재사용성을 위해,
+        JPQL보다는 QueryDSL을 활용해 보시는 건 어떨까요?
      */
     @Query(value = "select * from alarm_record ar "
         + "join member_alarm ma on ar.member_alarm_id = ma.member_alarm_id "
